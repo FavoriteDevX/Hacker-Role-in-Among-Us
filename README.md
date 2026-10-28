@@ -4,7 +4,7 @@
 
 **The Hacker** is a new **Impostor** role for Among Us. It is designed as a community mod (BepInEx + Reactor) for **private lobbies where every player has the mod installed**.
 
-> ⚠️ **Status: design phase.** This repository has the full design spec. The mod has not been built or playtested yet. See the [Roadmap](#-roadmap).
+> ⚠️ **Status: v0.1.0, first playable build, not yet playtested.** The code in [`src/`](src) implements all three abilities. CI compiles it against the game's reference assemblies, but nobody has played it in a real lobby yet. Expect bugs, and please report them.
 
 ---
 
@@ -13,6 +13,7 @@
 | Document | Contents |
 |---|---|
 | [`HACKER_ROLE_DESIGN.md`](HACKER_ROLE_DESIGN.md) | Full design: mechanics, balance, counters, edge cases, lobby settings, visuals and sounds, technical architecture, delivery plan |
+| [`src/`](src) | The mod's source code (C#, BepInEx + Reactor) |
 
 ---
 
@@ -34,13 +35,56 @@
 
 ---
 
-## 🛠️ Planned technical stack
+## 🎮 How to play (everyone in the lobby must do this)
+
+The mod is built for **Among Us v2024.10.29 (Steam)**, the same version the reference libraries target. Other game versions may fail to load it.
+
+1. Install **BepInEx 6 (IL2CPP, build 697 or newer)** into your Among Us folder.
+2. Install **[Reactor 2.3.1](https://github.com/NuclearPowered/Reactor/releases)**: put `Reactor.dll` in `Among Us/BepInEx/plugins/`.
+3. Download **`HackerRole.dll`** from the latest successful [Build workflow run](../../actions/workflows/build.yml) (under *Artifacts*) and put it in `Among Us/BepInEx/plugins/`.
+4. Start the game and host a **private lobby**. Reactor checks that every player has the mod and rejects players who don't.
+5. Set at least 1 Impostor. When the game starts, one plain Impostor (not Shapeshifter or Phantom) becomes the Hacker.
+
+### Controls (Hacker only)
+
+| Key | Button | Action |
+|---|---|---|
+| `G` | HACK | Opens the target list. The next task that player opens gets glitched |
+| `H` | CAM | Pocket Cam: the map's security view from anywhere |
+| `J` | PLANT | Plants the bug on the closest crewmate in kill range |
+| Click | EXECUTE (blue X on a vote card) | In the next meeting: kills the planted player |
+
+### Host settings
+
+After the first launch, edit `Among Us/BepInEx/config/com.favoritedevx.hackerrole.cfg`. The host's values are sent to everyone when the game starts: spawn chance, kill penalty, cooldowns, glitch cap, Pocket Cam battery, Blue Screen on/off, minimum players alive for EXECUTE, and plant time.
+
+### Building from source
+
+```bash
+dotnet build src/HackerRole.csproj -c Release -p:AmongUs="/path/to/Among Us"
+```
+
+### Where v0.1.0 differs from the design spec
+
+| Spec | v0.1.0 |
+|---|---|
+| Custom art and sound for each glitch (cheese card, noodles, disco ball, modem sound) | No custom assets yet. Glitches use transform and color effects plus text: mirrored card reader, wobbly tinted wires, rainbow reader, upside-down lever, dial-up messages |
+| Target picker styled like the Shapeshifter menu | Simple on-screen list |
+| BSOD art on the vote card | The vote card shows `:( SUS_EXCEPTION` in blue |
+| Hacker count 0–2 | Always 1 |
+| In-lobby settings menu | Config file on the host |
+| Host checks every ability (anti-cheat) | Checked on the client that uses the ability, the same trust model as most role mods |
+| Clear Asteroids can be glitched when Visual Tasks is OFF | Clear Asteroids, Scan and Prime Shields are never glitched |
+
+---
+
+## 🛠️ Technical stack
 
 | Layer | Tool |
 |---|---|
 | Mod loader | BepInEx 6 (IL2CPP) |
 | Networking / RPCs | Reactor |
-| Role registration | MiraAPI (or a custom `RoleBehaviour`) |
+| Role assignment | Vanilla Impostor, upgraded to Hacker by the host (no MiraAPI) |
 | Patching | HarmonyX |
 | Play mode | Private lobbies or a community *Impostor* server, with **all players on the same mod build** |
 
@@ -51,10 +95,9 @@
 ## 🗺️ Roadmap
 
 - [x] Design document
-- [ ] **M1:** Role and buttons, plus Pocket Cam on all 5 maps
-- [ ] **M2:** Glitch Task with Wiring and Card Swipe variants
-- [ ] **M3:** Remaining 3 variants and Packet Trace
-- [ ] **M4:** Blue Screen, with every edge case tested on 4 clients
+- [x] **M1–M4 (code):** role, buttons, Pocket Cam, Glitch Task (5 variants + Packet Trace), Blue Screen
+- [ ] **M1–M4 (testing):** check on all 5 maps and run the §5.4 edge cases with 4 clients
+- [ ] Custom art and sounds, in-lobby settings menu
 - [ ] **M5:** Balance playtests (20+ games, target Hacker win rate 45–55%)
 
 ---
